@@ -7,6 +7,8 @@ print/out/
 # The handoff includes open story text and the encoded private archive.
 HANDOFF.md
 private/
+# Private host recordings are read only by the local build and encrypted into host.json.
+voiceRecordings/
 build.mjs
 node_modules/
 .DS_Store

@@ -1,0 +1,8 @@
+Open licensed host sound effects
+
+fireworks-loop.ogg is from "25 CC0 bang / firework SFX" by rubberduck.
+License: CC0. https://opengameart.org/content/25-cc0-bang-firework-sfx
+
+heavy-thud.wav is thud3.wav from "Metal Impact Sounds" by BMacZero.
+License: CC0. Optional credit: Brian MacIntosh.
+https://opengameart.org/content/metal-impact-sounds

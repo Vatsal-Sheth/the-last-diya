@@ -75,7 +75,7 @@ function shell(content, active = '') {
 function home() {
   const p = state.player;
   const addendum = state.openedAddendum
-    ? `<div class="addendum"><span class="pill">For your eyes only</span><p>${escapeHtml(p.nightAddendum)}</p></div>`
+    ? `<div class="addendum"><div class="addendum-top"><span class="pill">For your eyes only</span><button class="addendum-close" id="close-addendum" type="button">Close note</button></div><p>${escapeHtml(p.nightAddendum)}</p></div>`
     : `<button class="primary" id="open-addendum">Open your night addendum</button>`;
   const unlocked = Object.entries(state.acts).map(([act, payload]) => `<div class="item"><div class="item-head"><span>${escapeHtml(act.replace('act', 'Act '))} is here</span><span class="item-meta">${payload.messages.length} new</span></div>${payload.inPerson ? `<div class="in-person"><span class="pill">Shanta Bai said this in person</span><p>${escapeHtml(payload.inPerson)}</p></div>` : ''}${payload.messages.map((message) => `<p>${escapeHtml(message)}</p>`).join('')}</div>`).join('');
   const instagram = p.role === 'tara' ? '<button class="app-icon" data-view="instagram"><span class="glyph g-insta">◎</span><small>Instagram</small></button>' : '';
@@ -83,6 +83,7 @@ function home() {
   const revealWord = state.acts.act3 ? `<div class="reveal-word"><span>Keep this for the final reveal</span><strong>${escapeHtml(state.acts.act3.revealWord)}</strong></div>` : '';
   shell(`<div class="hello"><div class="diya">🪔</div><div class="eyebrow" style="color:#f2d9c5">Diwali night</div><h1>${escapeHtml(roleInfo[p.role].greeting)}</h1><p>The family is gathering downstairs. Keep your phone close.</p></div><div class="section-title"><h2>Your apps</h2><span>Tap to open</span></div><div class="app-grid"><button class="app-icon" data-view="inbox"><span class="glyph g-mail">✉</span><small>Inbox</small></button><button class="app-icon" data-view="chats"><span class="glyph g-chat">◌</span><small>Chats</small></button><button class="app-icon" data-view="gallery"><span class="glyph g-gallery">▧</span><small>Gallery</small></button>${instagram}</div><div class="section-title"><h2>Before everyone arrives</h2><span>Private</span></div>${addendum}<div class="section-title"><h2>Unlock an act</h2><span>Enter the code announced by Rohan</span></div><div class="unlock"><input id="act-code" autocomplete="off" autocapitalize="characters" placeholder="Act code" aria-label="Act code"><button id="unlock-act">Open</button></div><div id="act-error" class="item-meta" style="margin:8px 4px 0"></div>${hotSeat}${revealWord}${unlocked ? `<div class="section-title"><h2>New arrivals</h2><span>Unlocked</span></div><div class="card">${unlocked}</div>` : ''}`);
   document.querySelector('#open-addendum')?.addEventListener('click', () => { state.openedAddendum = true; home(); notify('Your private note is open.'); });
+  document.querySelector('#close-addendum')?.addEventListener('click', () => { state.openedAddendum = false; home(); notify('Night addendum closed.'); });
   document.querySelector('#unlock-act').addEventListener('click', unlockAct);
   document.querySelector('#open-hotseat')?.addEventListener('click', () => showView('hotseat'));
   document.querySelectorAll('.app-icon').forEach((button) => button.addEventListener('click', () => showView(button.dataset.view)));
@@ -191,7 +192,7 @@ function renderPhoneArtifact(itemId, kind) {
     content = `<div class="email-paper"><div class="email-app-label">MEHRA MAIL <span>${email.kind === 'reminder' ? 'REMINDER' : 'INBOX'}</span></div><h2>${escapeHtml(email.subject)}</h2><div class="email-address"><span class="mail-avatar">${escapeHtml(email.from.slice(0, 1))}</span><div><b>${escapeHtml(email.from)}</b><small>To ${escapeHtml(email.to)} · ${escapeHtml(email.timestamp)}</small></div></div><div class="email-body">${escapeHtml(email.body)}</div>${email.attachment ? `<div class="attachment"><span>▤</span><div><b>${escapeHtml(email.attachment)}</b><small>Saved attachment</small></div><span>›</span></div>` : ''}</div>`;
   } else if (kind === 'chat') {
     const thread = item.thread || { participants: [item.title], messages: [{ sender: item.title, text: chatText(item.detail), kind: item.voice ? 'voice' : 'text' }] };
-    content = `<div class="chat-paper"><div class="chat-contact"><span class="thread-avatar">${escapeHtml((thread.participants[1] || item.title).slice(0, 1))}</span><div><b>${escapeHtml(thread.participants[1] || item.title)}</b><small>WhatsApp · ${escapeHtml(thread.timestamp || 'Earlier')}</small></div></div><div class="chat-date">TODAY</div>${thread.messages.map((message) => `<div class="chat-line ${message.sender === 'You' ? 'mine' : ''}"><span class="chat-sender">${escapeHtml(message.sender)}</span>${message.kind === 'voice' ? `<div class="voice chat-voice"><button class="play" type="button" data-speak="${escapeHtml(message.text)}" aria-label="Play voice note">▶</button><span><b>Voice note</b><small>${escapeHtml(message.text)}</small></span></div>` : `<p>${escapeHtml(message.text)}</p>`}<small class="chat-time">${message.kind === 'voice' ? '0:07' : '8:14 PM'}</small></div>`).join('')}</div>`;
+    content = `<div class="chat-paper"><div class="chat-contact"><span class="thread-avatar">${escapeHtml((thread.participants[1] || item.title).slice(0, 1))}</span><div><b>${escapeHtml(thread.participants[1] || item.title)}</b><small>WhatsApp · ${escapeHtml(thread.timestamp || 'Earlier')}</small></div></div><div class="chat-date">TODAY</div>${thread.messages.map((message) => `<div class="chat-line ${message.sender === 'You' ? 'mine' : ''}"><span class="chat-sender">${escapeHtml(message.sender)}</span>${message.kind === 'voice' ? `<div class="voice chat-voice"><button class="play" type="button" data-speak="${escapeHtml(message.text)}" aria-label="Read transcript aloud">▶</button><span><b>Generated readout</b><small>Text to speech, not a recording.</small><small>${escapeHtml(message.text)}</small></span></div>` : `<p>${escapeHtml(message.text)}</p>`}<small class="chat-time">${message.kind === 'voice' ? '0:07' : '8:14 PM'}</small></div>`).join('')}</div>`;
   } else {
     content = `<div class="photo-paper"><div class="photo-stage">${renderArt(item.art)}</div><div class="photo-caption"><span>GALLERY · ${escapeHtml(item.collection || 'SAVED')}</span><h2>${escapeHtml(item.title)}</h2><p>${escapeHtml(item.caption || item.detail)}</p><small>${escapeHtml(item.timestamp || 'Saved on this phone')}</small></div></div>`;
   }
@@ -202,7 +203,7 @@ function renderPhoneArtifact(itemId, kind) {
   dialog.addEventListener('close', () => dialog.remove(), { once: true });
   dialog.querySelectorAll('[data-speak]').forEach((button) => button.addEventListener('click', () => {
     speakText(button.dataset.speak);
-    notify('Voice note playing.');
+    notify('Generated speech playing.');
   }));
 }
 

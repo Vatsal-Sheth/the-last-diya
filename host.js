@@ -1,5 +1,5 @@
 const app = document.querySelector('#host-app');
-const state = { config: null, timer: null, timerEnd: 0, lightsTimers: [] };
+const state = { config: null, timer: null, timerEnd: 0, lightsTimers: [], voiceAudio: null, voiceObjectUrl: null, fireworksAudio: null, thudAudio: null };
 const iconById = { welcome: '♪', note815: '♫', lights: '◐', shanta: '♪', news: '▤', inspector1: '◉', joshi: '✉', inspector2: '◉', letter: '✎', reveal: '✦' };
 const voiceProfiles = {
   dhanraj: { languages: ['en-IN', 'en-GB', 'en-US'], names: [/rishi/i, /daniel/i, /aarav/i], rate: 0.86, pitch: 0.78 },
@@ -53,6 +53,7 @@ function plainText(value) {
 }
 
 function login() {
+  stopVoiceClip();
   app.innerHTML = `<section class="login-wrap"><div class="login"><div class="login-mark">🪔</div><div class="eyebrow">Private host page</div><h1>Host console</h1><p>Enter the host code to open the pacing controls.</p><form id="host-form"><input id="host-code" type="password" autocomplete="current-password" autocapitalize="none" placeholder="Host code" aria-label="Host code"><button class="primary">Unlock console</button></form><div id="host-error" class="error"></div></div></section>`;
   document.querySelector('#host-form').addEventListener('submit', unlock);
 }
@@ -75,14 +76,17 @@ async function unlock(event) {
 function dashboard() {
   const { config } = state;
   const completed = new Set(JSON.parse(localStorage.getItem('last-diya-host-done') || '[]'));
-  app.innerHTML = `<main class="layout"><header class="header"><div><div class="eyebrow">Mehra Haveli · Sunday, 8 November</div><h1>Host console</h1><p>Your pacing controls for the night.</p></div><div class="head-actions"><span class="badge">Private host page</span><button id="host-lock" class="text-button">Lock console</button></div></header><div class="notice"><span>🪔</span><div><b>Host view</b>This console keeps the schedule and cue prompts in one place. It does not send cues to player phones, so players enter each act code on their own devices.</div></div><div class="grid"><div><section class="panel"><h2>Act codes</h2><p class="sub">Announce each code when the group is ready. The suffix makes each code unique.</p><div class="codes">${Object.entries(config.actCodes).map(([act, code], index) => `<div class="code-card"><div><small>Act ${index + 1}</small><div class="code-value"><span>${escapeHtml(code)}</span></div></div><button class="copy" data-copy="${escapeHtml(code)}">Copy</button></div>`).join('')}</div></section><section class="panel" style="margin-top:17px"><h2>Cue buttons</h2><p class="sub">Voice previews use your browser’s built-in speech. Sound cues are synthesized locally.</p><div class="cue-grid">${config.cues.map((cue) => `<button class="cue" data-cue="${escapeHtml(cue.id)}"><span class="cue-icon">${iconById[cue.id] || '•'}</span><span><b>${escapeHtml(cue.title)}</b><small>${escapeHtml(cue.detail)}</small></span></button>`).join('')}</div></section><p class="footnote">The lights-out button runs the visual timing cue. Keep the room lights under your control.</p></div><div><section class="panel"><h2>Run of show</h2><p class="sub">Times at left follow the story clock. Timers use the stated real-time durations.</p><div class="timeline">${config.timeline.map((event) => `<div class="event"><span class="event-time">${escapeHtml(event.time)}</span><label class="event-main"><input type="checkbox" data-done="${escapeHtml(event.id)}" ${completed.has(event.id) ? 'checked' : ''}><span><b>${escapeHtml(event.title)}</b><p>${escapeHtml(event.detail)}</p></span></label><button class="start" data-minutes="${event.minutes}" data-name="${escapeHtml(event.title)}">${event.minutes} min</button></div>`).join('')}</div></section><section class="timer"><div><small id="timer-label">Timer ready</small><strong id="timer-readout">00:00</strong></div><button id="timer-stop">Stop timer</button></section></div></div></main>`;
+  app.innerHTML = `<main class="layout"><header class="header"><div><div class="eyebrow">Mehra Haveli · Sunday, 8 November</div><h1>Host console</h1><p>Your pacing controls for the night.</p></div><div class="head-actions"><span class="badge">Private host page</span><button id="host-lock" class="text-button">Lock console</button></div></header><div class="notice"><span>🪔</span><div><b>Host view</b>This console keeps the schedule and cue prompts in one place. It does not send cues to player phones, so players enter each act code on their own devices.</div></div><div class="grid"><div><section class="panel"><h2>Act codes</h2><p class="sub">Announce each code when the group is ready. The suffix makes each code unique.</p><div class="codes">${Object.entries(config.actCodes).map(([act, code], index) => `<div class="code-card"><div><small>Act ${index + 1}</small><div class="code-value"><span>${escapeHtml(code)}</span></div></div><button class="copy" data-copy="${escapeHtml(code)}">Copy</button></div>`).join('')}</div></section><section class="panel" style="margin-top:17px"><h2>Cue buttons</h2><p class="sub">Voice cues use your browser’s built-in speech. Use the private clip library below for recordings. Sound effects play from local files with synthesized fallbacks.</p><div class="cue-grid">${config.cues.map((cue) => `<button class="cue" data-cue="${escapeHtml(cue.id)}"><span class="cue-icon">${iconById[cue.id] || '•'}</span><span><b>${escapeHtml(cue.title)}</b><small>${escapeHtml(cue.detail)}</small></span></button>`).join('')}</div></section><p class="footnote">The lights-out button runs the visual timing cue. Keep the room lights under your control.</p></div><div><section class="panel"><h2>Run of show</h2><p class="sub">Times at left follow the story clock. Timers use the stated real-time durations.</p><div class="timeline">${config.timeline.map((event) => `<div class="event"><span class="event-time">${escapeHtml(event.time)}</span><label class="event-main"><input type="checkbox" data-done="${escapeHtml(event.id)}" ${completed.has(event.id) ? 'checked' : ''}><span><b>${escapeHtml(event.title)}</b><p>${escapeHtml(event.detail)}</p></span></label><button class="start" data-minutes="${event.minutes}" data-name="${escapeHtml(event.title)}">${event.minutes} min</button></div>`).join('')}</div></section><section class="timer"><div><small id="timer-label">Timer ready</small><strong id="timer-readout">00:00</strong></div><button id="timer-stop">Stop timer</button></section></div></div></main>`;
+  app.querySelector('.cue-grid').closest('.panel').insertAdjacentHTML('afterend', renderVoiceLibrary(config.voiceLibrary));
   app.querySelector('.layout').insertAdjacentHTML('beforeend', '<section class="emergency"><div><b>Emergency reveal</b><p>Use only if the printed break-glass code is needed.</p></div><button id="breakglass-open">Enter break-glass code</button></section>');
-  document.querySelector('#host-lock').addEventListener('click', () => { state.config = null; stopTimer(); clearLightsCue(); login(); });
+  document.querySelector('#host-lock').addEventListener('click', () => { stopVoiceClip(); state.config = null; stopTimer(); clearLightsCue(); login(); });
   document.querySelectorAll('[data-copy]').forEach((button) => button.addEventListener('click', async () => {
     try { await navigator.clipboard.writeText(button.dataset.copy); toast('Code copied.'); }
     catch { toast('Select the code to copy it.'); }
   }));
   document.querySelectorAll('[data-cue]').forEach((button) => button.addEventListener('click', () => runCue(button.dataset.cue)));
+  document.querySelectorAll('[data-voice-play]').forEach((button) => button.addEventListener('click', () => playVoiceClip(Number(button.dataset.voicePlay))));
+  document.querySelectorAll('[data-voice-stop]').forEach((button) => button.addEventListener('click', stopVoiceClip));
   document.querySelectorAll('[data-minutes]').forEach((button) => button.addEventListener('click', () => startTimer(Number(button.dataset.minutes), button.dataset.name)));
   document.querySelectorAll('[data-done]').forEach((checkbox) => checkbox.addEventListener('change', () => {
     if (checkbox.checked) completed.add(checkbox.dataset.done); else completed.delete(checkbox.dataset.done);
@@ -95,6 +99,45 @@ function dashboard() {
 
 function escapeHtml(value = '') {
   return String(value).replaceAll('\u2014', ',').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&#39;');
+}
+
+function renderVoiceLibrary(clips = []) {
+  const entries = Array.isArray(clips) ? clips : [];
+  return `<section class="panel voice-library-panel"><h2>Voice recordings</h2><p class="sub">Private playback controls for the host.</p><div class="voice-list">${entries.map((clip, index) => `<div class="voice-row"><b>Clip ${index + 1}</b><div class="voice-actions"><button class="voice-play" data-voice-play="${index}" aria-label="Play Clip ${index + 1}">Play</button><button class="voice-stop" data-voice-stop="${index}" aria-label="Stop Clip ${index + 1}" disabled>Stop</button></div></div>`).join('')}</div></section>`;
+}
+
+function playVoiceClip(index) {
+  const clip = state.config?.voiceLibrary?.[index];
+  if (!clip) { toast('This recording is not available.'); return; }
+  stopVoiceClip();
+  const objectUrl = URL.createObjectURL(new Blob([b64(clip.data)], { type: clip.type }));
+  const audio = new Audio(objectUrl);
+  state.voiceObjectUrl = objectUrl;
+  state.voiceAudio = audio;
+  const stopButton = document.querySelector(`[data-voice-stop="${index}"]`);
+  if (stopButton) stopButton.disabled = false;
+  const failed = () => {
+    if (state.voiceAudio !== audio) return;
+    stopVoiceClip();
+    toast('This recording could not be played.');
+  };
+  audio.addEventListener('ended', stopVoiceClip, { once: true });
+  audio.addEventListener('error', failed, { once: true });
+  audio.play().catch(failed);
+}
+
+function stopVoiceClip() {
+  const audio = state.voiceAudio;
+  state.voiceAudio = null;
+  if (audio) {
+    audio.pause();
+    audio.currentTime = 0;
+    audio.removeAttribute('src');
+    audio.load();
+  }
+  if (state.voiceObjectUrl) URL.revokeObjectURL(state.voiceObjectUrl);
+  state.voiceObjectUrl = null;
+  document.querySelectorAll('[data-voice-stop]').forEach((button) => { button.disabled = true; });
 }
 
 function runCue(id) {
@@ -115,7 +158,7 @@ function runCue(id) {
 }
 
 function runLightsCue() {
-  clearLightsTimers();
+  clearLightsCue();
   playFirecrackerVolley();
   const overlay = document.createElement('div');
   overlay.className = 'dark-cue';
@@ -130,7 +173,7 @@ function runLightsCue() {
     overlay.style.background = dark ? '#000' : '#050403';
   }, delay));
   update(2200, 'Thunk', 'Cut the room lights now.');
-  state.lightsTimers.push(setTimeout(playThunk, 2200));
+  state.lightsTimers.push(setTimeout(() => { stopEffectAudio('fireworksAudio'); playThunk(); }, 2200));
   update(4000, '20', 'Seconds of darkness. Bring the room lights back after the scream.', true);
   for (let second = 19; second >= 1; second--) update(5000 + (19 - second) * 1000, String(second), 'Seconds of darkness.', true);
   update(24000, 'Scream', 'Bring the room lights back up now.', false);
@@ -169,6 +212,10 @@ function audioContext() {
 }
 
 function playFirecrackerVolley() {
+  playEffectAsset('./audio/fireworks-loop.ogg', 'fireworksAudio', playFirecrackerFallback, true);
+}
+
+function playFirecrackerFallback() {
   try {
     const context = audioContext();
     if (!context) return;
@@ -193,6 +240,10 @@ function playFirecrackerVolley() {
 }
 
 function playThunk() {
+  playEffectAsset('./audio/heavy-thud.wav', 'thudAudio', playThunkFallback);
+}
+
+function playThunkFallback() {
   try {
     const context = audioContext();
     if (!context) return;
@@ -207,6 +258,40 @@ function playThunk() {
     oscillator.start(); oscillator.stop(context.currentTime + 0.42);
     setTimeout(() => context.close(), 500);
   } catch { /* Sound is optional on browsers that block audio. */ }
+}
+
+function playEffectAsset(source, stateKey, fallback, loop = false) {
+  stopEffectAudio(stateKey);
+  let audio;
+  try {
+    audio = new Audio(source);
+    audio.volume = 0.55;
+    audio.loop = loop;
+  } catch {
+    fallback();
+    return;
+  }
+  state[stateKey] = audio;
+  const failed = () => {
+    if (state[stateKey] !== audio) return;
+    stopEffectAudio(stateKey);
+    fallback();
+  };
+  audio.addEventListener('error', failed, { once: true });
+  audio.play().catch(failed);
+}
+
+function stopEffectAudio(stateKey) {
+  const audio = state[stateKey];
+  state[stateKey] = null;
+  if (!audio) return;
+  audio.pause();
+  audio.currentTime = 0;
+}
+
+function stopTheatricsAudio() {
+  stopEffectAudio('fireworksAudio');
+  stopEffectAudio('thudAudio');
 }
 
 function playScreamCue() {
@@ -235,7 +320,7 @@ function playScreamCue() {
 
 function onEscape(event) { if (event.key === 'Escape') clearLightsCue(); }
 function clearLightsTimers() { state.lightsTimers.forEach(clearTimeout); state.lightsTimers = []; }
-function clearLightsCue() { clearLightsTimers(); window.removeEventListener('keydown', onEscape); document.querySelector('.dark-cue')?.remove(); }
+function clearLightsCue() { clearLightsTimers(); stopTheatricsAudio(); window.removeEventListener('keydown', onEscape); document.querySelector('.dark-cue')?.remove(); }
 
 function startTimer(minutes, name) {
   clearInterval(state.timer);

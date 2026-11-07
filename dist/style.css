@@ -109,6 +109,9 @@ button { cursor: pointer; }
 .unlock {display:flex;gap:8px;margin-top:15px}.unlock input{min-width:0;flex:1;background:#fffaf3;border:1px solid var(--line);color:var(--ink);padding:12px;border-radius:12px}.unlock button{border:0;background:var(--red);color:white;padding:0 16px;border-radius:12px;font-weight:700}
 .locked {background:#f1e3d0;border:1px dashed #c5a889;border-radius:15px;padding:14px;font-size:12px;line-height:1.5;color:#644b3b}
 .addendum {background:#fff5e6;border:1px solid #e8c99d;border-radius:17px;padding:17px;font-size:13px;line-height:1.6;margin-top:13px}
+.addendum-top {display:flex;align-items:center;justify-content:space-between;gap:12px}
+.addendum-close {border:1px solid #ddc4a4;border-radius:99px;padding:7px 11px;background:#fffaf2;color:#684b35;font-size:11px;font-weight:700}
+.addendum>p {margin:12px 0 0}
 .reveal-word{display:flex;align-items:center;justify-content:space-between;gap:15px;padding:16px 18px;margin-top:16px;border-radius:16px;background:#392821;color:#fff3e5}.reveal-word span{font-size:11px;color:#d9c5b4}.reveal-word strong{font:600 22px 'Playfair Display',serif;color:#f1bd78;letter-spacing:1px}.hotseat-link{margin:12px 0 0;padding:10px 0}.hotseat-card{margin-top:14px}
 .toast {position:fixed;top:22px;left:50%;transform:translateX(-50%);background:#30221b;color:white;border-radius:99px;padding:11px 16px;font-size:12px;box-shadow:0 8px 24px #0003;z-index:10}
 .document {font-size:13px;line-height:1.75;color:#4d4039;white-space:pre-wrap}
