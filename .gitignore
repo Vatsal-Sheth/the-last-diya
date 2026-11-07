@@ -1,0 +1,12 @@
+# Story source is plaintext (secrets + sealed endings). Never publish it.
+story/
+# Print source is local only. Keep the public repo focused on the app and encrypted output.
+print/
+# Printables contain secrets and sealed clues
+print/out/
+# The handoff includes open story text and the encoded private archive.
+HANDOFF.md
+private/
+build.mjs
+node_modules/
+.DS_Store
