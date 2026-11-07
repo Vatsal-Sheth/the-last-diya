@@ -110,6 +110,7 @@ async function unlockAct() {
       state.acts[act] = { ...payload, messages: [], inPerson: personal.inPerson || '', hotSeatQuestions: personal.hotSeatQuestions || [], revealWord: personal.revealWord || '', fallbackClue: personal.fallbackClue || '' };
       state.busy = false;
       home();
+      if (act === 'act2') showBreakingNewsPrompt();
       messages.forEach((message, index) => state.deliveryTimers.push(setTimeout(() => {
         if (!state.player || !state.acts[act]) return;
         state.acts[act].messages.push(message);
@@ -132,6 +133,18 @@ async function unlockAct() {
   }
   error.textContent = 'That code did not unlock an act. Try again.';
   state.busy = false;
+}
+
+function showBreakingNewsPrompt() {
+  document.querySelector('.breaking-news-prompt')?.remove();
+  const prompt = document.createElement('section');
+  prompt.className = 'breaking-news-prompt';
+  prompt.innerHTML = '<div class="breaking-news-card" role="dialog" aria-modal="true" aria-labelledby="breaking-news-title"><span class="breaking-news-live">LIVE BULLETIN</span><h2 id="breaking-news-title">BREAKING NEWS</h2><p>The TV bulletin is ready.</p><button id="open-breaking-news" type="button">Open breaking news</button><button id="later-breaking-news" class="breaking-news-later" type="button">Later</button></div></section>';
+  document.body.append(prompt);
+  document.querySelector('#open-breaking-news').addEventListener('click', () => {
+    location.href = './tv.html?mode=breaking&return=phone';
+  });
+  document.querySelector('#later-breaking-news').addEventListener('click', () => prompt.remove());
 }
 
 function cardItem(title, body, meta = '') {

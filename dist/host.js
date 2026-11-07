@@ -1,5 +1,5 @@
 const app = document.querySelector('#host-app');
-const state = { config: null, timer: null, timerEnd: 0, lightsTimers: [], voiceAudio: null, voiceObjectUrl: null, fireworksAudio: null, thudAudio: null };
+const state = { config: null, timer: null, timerEnd: 0, lightsTimers: [], soundTimers: [], effectContexts: [], voiceAudio: null, voiceObjectUrl: null, fireworksAudio: null, thudAudio: null };
 const iconById = { welcome: '♪', note815: '♫', lights: '◐', shanta: '♪', news: '▤', inspector1: '◉', joshi: '✉', inspector2: '◉', letter: '✎', reveal: '✦' };
 const voiceProfiles = {
   dhanraj: { languages: ['en-IN', 'en-GB', 'en-US'], names: [/rishi/i, /daniel/i, /aarav/i], rate: 0.86, pitch: 0.78 },
@@ -76,10 +76,9 @@ async function unlock(event) {
 function dashboard() {
   const { config } = state;
   const completed = new Set(JSON.parse(localStorage.getItem('last-diya-host-done') || '[]'));
-  app.innerHTML = `<main class="layout"><header class="header"><div><div class="eyebrow">Mehra Haveli · Sunday, 8 November</div><h1>Host console</h1><p>Your pacing controls for the night.</p></div><div class="head-actions"><span class="badge">Private host page</span><button id="host-lock" class="text-button">Lock console</button></div></header><div class="notice"><span>🪔</span><div><b>Host view</b>This console keeps the schedule and cue prompts in one place. It does not send cues to player phones, so players enter each act code on their own devices.</div></div><div class="grid"><div><section class="panel"><h2>Act codes</h2><p class="sub">Announce each code when the group is ready. The suffix makes each code unique.</p><div class="codes">${Object.entries(config.actCodes).map(([act, code], index) => `<div class="code-card"><div><small>Act ${index + 1}</small><div class="code-value"><span>${escapeHtml(code)}</span></div></div><button class="copy" data-copy="${escapeHtml(code)}">Copy</button></div>`).join('')}</div></section><section class="panel" style="margin-top:17px"><h2>Cue buttons</h2><p class="sub">Voice cues use your browser’s built-in speech. Use the private clip library below for recordings. Sound effects play from local files with synthesized fallbacks.</p><div class="cue-grid">${config.cues.map((cue) => `<button class="cue" data-cue="${escapeHtml(cue.id)}"><span class="cue-icon">${iconById[cue.id] || '•'}</span><span><b>${escapeHtml(cue.title)}</b><small>${escapeHtml(cue.detail)}</small></span></button>`).join('')}</div></section><p class="footnote">The lights-out button runs the visual timing cue. Keep the room lights under your control.</p></div><div><section class="panel"><h2>Run of show</h2><p class="sub">Times at left follow the story clock. Timers use the stated real-time durations.</p><div class="timeline">${config.timeline.map((event) => `<div class="event"><span class="event-time">${escapeHtml(event.time)}</span><label class="event-main"><input type="checkbox" data-done="${escapeHtml(event.id)}" ${completed.has(event.id) ? 'checked' : ''}><span><b>${escapeHtml(event.title)}</b><p>${escapeHtml(event.detail)}</p></span></label><button class="start" data-minutes="${event.minutes}" data-name="${escapeHtml(event.title)}">${event.minutes} min</button></div>`).join('')}</div></section><section class="timer"><div><small id="timer-label">Timer ready</small><strong id="timer-readout">00:00</strong></div><button id="timer-stop">Stop timer</button></section></div></div></main>`;
-  app.querySelector('.cue-grid').closest('.panel').insertAdjacentHTML('afterend', renderVoiceLibrary(config.voiceLibrary));
+  app.innerHTML = `<main class="layout"><header class="header"><div><div class="eyebrow">Mehra Haveli · Sunday, 8 November</div><h1>Host console</h1><p>Your pacing controls for the night.</p></div><div class="head-actions"><span class="badge">Private host page</span><button id="host-lock" class="text-button">Lock console</button></div></header><div class="notice"><span>🪔</span><div><b>Host view</b>This console keeps the schedule and cue prompts in one place. It does not send cues to player phones, so players enter each act code on their own devices.</div></div><div class="grid"><div><section class="panel"><h2>Cue buttons</h2><p class="sub">Voice prompts use your browser’s built-in speech. Recordings play here on the host device.</p><div class="cue-grid">${config.cues.map((cue) => `<button class="cue" data-cue="${escapeHtml(cue.id)}"><span class="cue-icon">${iconById[cue.id] || '•'}</span><span><b>${escapeHtml(cue.title)}</b><small>${escapeHtml(cue.detail)}</small></span></button>`).join('')}${renderVoiceCueButtons(config.voiceLibrary)}</div></section><section class="panel sound-panel"><h2>Sound effects</h2><p class="sub">Preview the theatrical sounds here, or use the lights-out cue for the timed sequence.</p><div class="sound-grid"><button class="cue sound-cue" data-sound="fireworks"><span class="cue-icon">✳</span><span><b>Firecracker volley</b><small>Play the firework loop until stopped.</small></span></button><button class="cue sound-cue" data-sound="power"><span class="cue-icon">ϟ</span><span><b>Power cut and thud</b><small>Short electric drop followed by the impact.</small></span></button><button class="cue sound-cue" data-sound="scream"><span class="cue-icon">◖</span><span><b>Scream cue</b><small>Play the synthesized scream effect.</small></span></button></div><button class="sound-stop" id="stop-sounds">Stop sound effects</button></section><p class="footnote">The lights-out cue runs the full visual timing sequence. Keep the room lights under your control.</p></div><div><section class="panel"><h2>Act codes</h2><p class="sub">Announce each code when the group is ready. The suffix makes each code unique.</p><div class="codes">${Object.entries(config.actCodes).map(([act, code], index) => `<div class="code-card"><div><small>Act ${index + 1}</small><div class="code-value"><span>${escapeHtml(code)}</span></div></div><button class="copy" data-copy="${escapeHtml(code)}">Copy</button></div>`).join('')}</div></section><section class="panel show-panel"><h2>Run of show</h2><p class="sub">Times at left follow the story clock. Timers use the stated real-time durations.</p><div class="timeline">${config.timeline.map((event) => `<div class="event"><span class="event-time">${escapeHtml(event.time)}</span><label class="event-main"><input type="checkbox" data-done="${escapeHtml(event.id)}" ${completed.has(event.id) ? 'checked' : ''}><span><b>${escapeHtml(event.title)}</b><p>${escapeHtml(event.detail)}</p></span></label><button class="start" data-minutes="${event.minutes}" data-name="${escapeHtml(event.title)}">Start ${event.minutes} min</button></div>`).join('')}</div></section><section class="timer"><div class="timer-readout"><small id="timer-label">Timer ready</small><strong id="timer-readout-value">00:00</strong></div><div class="timer-controls"><label>Minutes<input id="timer-minutes" type="number" min="1" max="240" value="20" inputmode="numeric"></label><label>Timer name<input id="timer-name" type="text" maxlength="40" placeholder="Custom timer" value="Custom timer"></label><div class="timer-actions"><button id="timer-start">Start timer</button><button id="timer-stop" disabled>Stop timer</button></div></div></section></div></div></main>`;
   app.querySelector('.layout').insertAdjacentHTML('beforeend', '<section class="emergency"><div><b>Emergency reveal</b><p>Use only if the printed break-glass code is needed.</p></div><button id="breakglass-open">Enter break-glass code</button></section>');
-  document.querySelector('#host-lock').addEventListener('click', () => { stopVoiceClip(); state.config = null; stopTimer(); clearLightsCue(); login(); });
+  document.querySelector('#host-lock').addEventListener('click', () => { stopVoiceClip(); state.config = null; stopTimer(); clearLightsCue(); stopSoundEffects(); login(); });
   document.querySelectorAll('[data-copy]').forEach((button) => button.addEventListener('click', async () => {
     try { await navigator.clipboard.writeText(button.dataset.copy); toast('Code copied.'); }
     catch { toast('Select the code to copy it.'); }
@@ -87,12 +86,19 @@ function dashboard() {
   document.querySelectorAll('[data-cue]').forEach((button) => button.addEventListener('click', () => runCue(button.dataset.cue)));
   document.querySelectorAll('[data-voice-play]').forEach((button) => button.addEventListener('click', () => playVoiceClip(Number(button.dataset.voicePlay))));
   document.querySelectorAll('[data-voice-stop]').forEach((button) => button.addEventListener('click', stopVoiceClip));
+  document.querySelectorAll('[data-sound]').forEach((button) => button.addEventListener('click', () => runSoundCue(button.dataset.sound)));
   document.querySelectorAll('[data-minutes]').forEach((button) => button.addEventListener('click', () => startTimer(Number(button.dataset.minutes), button.dataset.name)));
   document.querySelectorAll('[data-done]').forEach((checkbox) => checkbox.addEventListener('change', () => {
     if (checkbox.checked) completed.add(checkbox.dataset.done); else completed.delete(checkbox.dataset.done);
     localStorage.setItem('last-diya-host-done', JSON.stringify([...completed]));
   }));
+  document.querySelector('#timer-start').addEventListener('click', () => {
+    const minutes = Number(document.querySelector('#timer-minutes').value);
+    const name = document.querySelector('#timer-name').value.trim() || 'Custom timer';
+    startTimer(minutes, name);
+  });
   document.querySelector('#timer-stop').addEventListener('click', stopTimer);
+  document.querySelector('#stop-sounds').addEventListener('click', stopSoundEffects);
   document.querySelector('#breakglass-open').addEventListener('click', openBreakGlass);
   tickTimer();
 }
@@ -101,9 +107,10 @@ function escapeHtml(value = '') {
   return String(value).replaceAll('\u2014', ',').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&#39;');
 }
 
-function renderVoiceLibrary(clips = []) {
+function renderVoiceCueButtons(clips = []) {
   const entries = Array.isArray(clips) ? clips : [];
-  return `<section class="panel voice-library-panel"><h2>Voice recordings</h2><p class="sub">Private playback controls for the host.</p><div class="voice-list">${entries.map((clip, index) => `<div class="voice-row"><b>Clip ${index + 1}</b><div class="voice-actions"><button class="voice-play" data-voice-play="${index}" aria-label="Play Clip ${index + 1}">Play</button><button class="voice-stop" data-voice-stop="${index}" aria-label="Stop Clip ${index + 1}" disabled>Stop</button></div></div>`).join('')}</div></section>`;
+  if (!entries.length) return '';
+  return `<div class="cue-group-label">Voice recordings</div>${entries.map((clip, index) => `<div class="cue voice-cue"><span class="cue-icon">♫</span><span class="voice-cue-name"><b>${escapeHtml(clip.label || `Voice recording ${index + 1}`)}</b><small>Host playback</small></span><span class="voice-actions"><button class="voice-play" data-voice-play="${index}" aria-label="Play ${escapeHtml(clip.label || `voice recording ${index + 1}`)}">Play</button><button class="voice-stop" data-voice-stop="${index}" aria-label="Stop ${escapeHtml(clip.label || `voice recording ${index + 1}`)}" disabled>Stop</button></span></div>`).join('')}`;
 }
 
 function playVoiceClip(index) {
@@ -155,6 +162,15 @@ function runCue(id) {
   toast(cue.detail);
   const event = state.config.timeline.find((item) => item.id === id);
   if (event) startTimer(event.minutes, event.title);
+}
+
+function runSoundCue(id) {
+  stopSoundEffects();
+  if (id === 'fireworks') playFirecrackerVolley();
+  else if (id === 'power') {
+    playPowerCutTone();
+    state.soundTimers.push(setTimeout(playThunk, 180));
+  } else if (id === 'scream') playScreamCue();
 }
 
 function runLightsCue() {
@@ -219,6 +235,7 @@ function playFirecrackerFallback() {
   try {
     const context = audioContext();
     if (!context) return;
+    trackEffectContext(context, 1800);
     for (let burst = 0; burst < 5; burst++) {
       const length = Math.floor(context.sampleRate * 0.11);
       const buffer = context.createBuffer(1, length, context.sampleRate);
@@ -235,7 +252,6 @@ function playFirecrackerFallback() {
       source.connect(filter); filter.connect(gain); gain.connect(context.destination);
       source.start(context.currentTime + burst * 0.26);
     }
-    setTimeout(() => context.close(), 1800);
   } catch { /* Sound is optional on browsers that block audio. */ }
 }
 
@@ -247,6 +263,7 @@ function playThunkFallback() {
   try {
     const context = audioContext();
     if (!context) return;
+    trackEffectContext(context, 500);
     const oscillator = context.createOscillator();
     const gain = context.createGain();
     oscillator.type = 'triangle';
@@ -256,7 +273,28 @@ function playThunkFallback() {
     gain.gain.exponentialRampToValueAtTime(0.001, context.currentTime + 0.4);
     oscillator.connect(gain); gain.connect(context.destination);
     oscillator.start(); oscillator.stop(context.currentTime + 0.42);
-    setTimeout(() => context.close(), 500);
+  } catch { /* Sound is optional on browsers that block audio. */ }
+}
+
+function playPowerCutTone() {
+  try {
+    const context = audioContext();
+    if (!context) return;
+    trackEffectContext(context, 450);
+    const oscillator = context.createOscillator();
+    const filter = context.createBiquadFilter();
+    const gain = context.createGain();
+    oscillator.type = 'sawtooth';
+    oscillator.frequency.setValueAtTime(720, context.currentTime);
+    oscillator.frequency.exponentialRampToValueAtTime(48, context.currentTime + 0.24);
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(1800, context.currentTime);
+    filter.frequency.exponentialRampToValueAtTime(150, context.currentTime + 0.25);
+    gain.gain.setValueAtTime(0.001, context.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.08, context.currentTime + 0.04);
+    gain.gain.exponentialRampToValueAtTime(0.001, context.currentTime + 0.27);
+    oscillator.connect(filter); filter.connect(gain); gain.connect(context.destination);
+    oscillator.start(); oscillator.stop(context.currentTime + 0.29);
   } catch { /* Sound is optional on browsers that block audio. */ }
 }
 
@@ -298,6 +336,7 @@ function playScreamCue() {
   try {
     const context = audioContext();
     if (!context) return;
+    trackEffectContext(context, 1300);
     const oscillator = context.createOscillator();
     const filter = context.createBiquadFilter();
     const gain = context.createGain();
@@ -314,28 +353,61 @@ function playScreamCue() {
     gain.gain.exponentialRampToValueAtTime(0.001, context.currentTime + 1.1);
     oscillator.connect(filter); filter.connect(gain); gain.connect(context.destination);
     oscillator.start(); oscillator.stop(context.currentTime + 1.12);
-    setTimeout(() => context.close(), 1300);
   } catch { /* The visual scream cue remains if browser audio is blocked. */ }
 }
 
 function onEscape(event) { if (event.key === 'Escape') clearLightsCue(); }
 function clearLightsTimers() { state.lightsTimers.forEach(clearTimeout); state.lightsTimers = []; }
-function clearLightsCue() { clearLightsTimers(); stopTheatricsAudio(); window.removeEventListener('keydown', onEscape); document.querySelector('.dark-cue')?.remove(); }
+function trackEffectContext(context, duration) {
+  state.effectContexts.push(context);
+  const timer = setTimeout(() => {
+    state.soundTimers = state.soundTimers.filter((item) => item !== timer);
+    closeEffectContext(context);
+  }, duration);
+  state.soundTimers.push(timer);
+}
+
+function closeEffectContext(context) {
+  state.effectContexts = state.effectContexts.filter((item) => item !== context);
+  if (context.state !== 'closed') context.close().catch(() => {});
+}
+
+function stopSoundEffects() {
+  state.soundTimers.forEach(clearTimeout);
+  state.soundTimers = [];
+  stopTheatricsAudio();
+  [...state.effectContexts].forEach(closeEffectContext);
+}
+
+function clearLightsCue() { clearLightsTimers(); stopSoundEffects(); window.removeEventListener('keydown', onEscape); document.querySelector('.dark-cue')?.remove(); }
 
 function startTimer(minutes, name) {
+  const duration = Math.floor(Number(minutes));
+  if (!Number.isFinite(duration) || duration < 1 || duration > 240) {
+    toast('Choose a timer from 1 to 240 minutes.');
+    return;
+  }
   clearInterval(state.timer);
-  state.timerEnd = Date.now() + minutes * 60_000;
-  document.querySelector('#timer-label').textContent = name;
+  state.timerEnd = Date.now() + duration * 60_000;
+  document.querySelector('#timer-label').textContent = name || 'Timer';
+  document.querySelector('#timer-stop').disabled = false;
   tickTimer();
   state.timer = setInterval(tickTimer, 1000);
 }
 
 function tickTimer() {
-  const readout = document.querySelector('#timer-readout');
+  const readout = document.querySelector('#timer-readout-value');
   if (!readout || !state.timerEnd) return;
   const left = Math.max(0, Math.ceil((state.timerEnd - Date.now()) / 1000));
   readout.textContent = `${String(Math.floor(left / 60)).padStart(2, '0')}:${String(left % 60).padStart(2, '0')}`;
-  if (!left) { clearInterval(state.timer); state.timer = null; toast('Timer finished.'); }
+  if (!left) {
+    clearInterval(state.timer);
+    state.timer = null;
+    state.timerEnd = 0;
+    document.querySelector('#timer-stop').disabled = true;
+    document.querySelector('#timer-label').textContent = 'Timer finished';
+    toast('Timer finished.');
+  }
 }
 
 function stopTimer() {
@@ -343,9 +415,11 @@ function stopTimer() {
   state.timer = null;
   state.timerEnd = 0;
   const label = document.querySelector('#timer-label');
-  const readout = document.querySelector('#timer-readout');
+  const readout = document.querySelector('#timer-readout-value');
+  const stop = document.querySelector('#timer-stop');
   if (label) label.textContent = 'Timer stopped';
   if (readout) readout.textContent = '00:00';
+  if (stop) stop.disabled = true;
 }
 
 function toast(message) {

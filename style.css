@@ -116,3 +116,11 @@ button { cursor: pointer; }
 .toast {position:fixed;top:22px;left:50%;transform:translateX(-50%);background:#30221b;color:white;border-radius:99px;padding:11px 16px;font-size:12px;box-shadow:0 8px 24px #0003;z-index:10}
 .document {font-size:13px;line-height:1.75;color:#4d4039;white-space:pre-wrap}
 @media (min-width:431px){.phone{min-height:850px;margin:20px auto;border-radius:32px;box-shadow:0 24px 80px #0005}.bottom-nav{bottom:20px;border-radius:0 0 32px 32px}}
+.breaking-news-prompt{position:fixed;inset:0;z-index:50;display:grid;place-items:center;padding:20px;background:#160e0bcc;backdrop-filter:blur(5px)}
+.breaking-news-card{width:min(100%,390px);padding:28px 24px 22px;border:1px solid #e9cda8;border-radius:22px;background:#fff8ee;box-shadow:0 24px 80px #0007;text-align:center}
+.breaking-news-live{display:inline-flex;align-items:center;gap:7px;color:#9b332a;font-size:10px;font-weight:800;letter-spacing:1.7px}
+.breaking-news-live:before{content:"";width:8px;height:8px;border-radius:50%;background:#c6473b;box-shadow:0 0 0 4px #c6473b22}
+.breaking-news-card h2{margin:15px 0 7px;color:#30211b;font:700 clamp(27px,8vw,38px) 'Playfair Display',serif;letter-spacing:.3px}
+.breaking-news-card p{margin:0 0 20px;color:#79675a;font-size:13px}
+.breaking-news-card button{width:100%;border:0;border-radius:12px;padding:14px;background:#9b332a;color:#fff8ee;font-weight:800;letter-spacing:.3px}
+.breaking-news-card .breaking-news-later{margin-top:8px;background:transparent;color:#765b4b;padding:10px}
